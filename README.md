@@ -84,8 +84,8 @@ models, on the two splits that isolate the two failure types.
 
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
-| gpt-5.4          | 20.0% | **0.0%** | 30/30 | 1.00 |
 | claude-opus-4-7  | 24.7% | 9.3%     | 23/37 | 1.43 |
+| gpt-5.4          | 20.0% | **0.0%** | 30/30 | 1.00 |
 | qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
 | deepseek-v3.2    | 12.0% | 3.3%     | 13/18 | 1.38 |
 | gpt-4o-2024-11-20| 19.3% | 16.0%    | 5/29  | 1.00 |
