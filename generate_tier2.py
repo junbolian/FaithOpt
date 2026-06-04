@@ -78,14 +78,17 @@ def compose(k, seed):
     )
 
 if __name__=="__main__":
-    out="FaithConstraint-OR_tier2_v0.jsonl"
+    out="FaithConstraint-OR_multi.jsonl"
     recs=[]
     sid=0
     for k in (2,3):                       # small bucket -> Hard
-        for _ in range(8): recs.append(compose(k, 5000+sid)); sid+=1
+        for _ in range(25): recs.append(compose(k, 5000+sid)); sid+=1
     for k in (5,6,7,8):                    # large bucket -> Very hard
-        for _ in range(6): recs.append(compose(k, 5000+sid)); sid+=1
+        for _ in range(25): recs.append(compose(k, 5000+sid)); sid+=1
+    import datetime
+    _manifest={"_manifest":True,"dataset":"FaithConstraint-OR","split":"multi-constraint","version":"v0","description":"Multiple pre-extracted hard constraints scattered across documents; encode all. Single variable.","n_instances":len(recs),"ground_truth":"mechanical, z3-verified","generated":datetime.date.today().isoformat()}
     with open(out,"w",encoding="utf-8") as f:
+        f.write(json.dumps(_manifest,ensure_ascii=False)+"\n")
         for r in recs: f.write(json.dumps(r,ensure_ascii=False)+"\n")
     import collections
     print(f"wrote {len(recs)} Tier-2 scenarios -> {out}")

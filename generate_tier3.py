@@ -86,13 +86,16 @@ def compose(k, seed):
     )
 
 if __name__=="__main__":
-    out="FaithConstraint-OR_tier3_v0.jsonl"
+    out="FaithConstraint-OR_identification.jsonl"
     recs=[]; sid=0
     for k in (2,3):
-        for _ in range(8): recs.append(compose(k, 7000+sid)); sid+=1
+        for _ in range(25): recs.append(compose(k, 7000+sid)); sid+=1
     for k in (5,6,7,8):
-        for _ in range(6): recs.append(compose(k, 7000+sid)); sid+=1
+        for _ in range(25): recs.append(compose(k, 7000+sid)); sid+=1
+    import datetime
+    _manifest={"_manifest":True,"dataset":"FaithConstraint-OR","split":"identification","version":"v0","description":"Numbered policy list mixing constraints with noise; identify then encode all. Single variable.","n_instances":len(recs),"ground_truth":"mechanical, z3-verified","generated":datetime.date.today().isoformat()}
     with open(out,"w",encoding="utf-8") as f:
+        f.write(json.dumps(_manifest,ensure_ascii=False)+"\n")
         for r in recs: f.write(json.dumps(r,ensure_ascii=False)+"\n")
     import collections
     print(f"wrote {len(recs)} Tier-3 numbered-list scenarios -> {out}")

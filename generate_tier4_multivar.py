@@ -104,13 +104,16 @@ def compose(k, seed):
     )
 
 if __name__=="__main__":
-    out="FaithConstraint-OR_tier4_v0.jsonl"
+    out="FaithConstraint-OR_multivariate.jsonl"
     recs=[]; sid=0
     for k in (3,):
-        for _ in range(8): recs.append(compose(k, 9000+sid)); sid+=1
+        for _ in range(30): recs.append(compose(k, 9000+sid)); sid+=1
     for k in (5,6,7,8):
-        for _ in range(6): recs.append(compose(k, 9000+sid)); sid+=1
+        for _ in range(30): recs.append(compose(k, 9000+sid)); sid+=1
+    import datetime
+    _manifest={"_manifest":True,"dataset":"FaithConstraint-OR","split":"multivariate","version":"v0","description":"Two prices p1,p2 with cross-variable constraints, derived bounds, noise; incl. over-determined conflicts.","n_instances":len(recs),"ground_truth":"mechanical, z3-verified","generated":datetime.date.today().isoformat()}
     with open(out,"w",encoding="utf-8") as f:
+        f.write(json.dumps(_manifest,ensure_ascii=False)+"\n")
         for r in recs: f.write(json.dumps(r,ensure_ascii=False)+"\n")
     import collections
     print(f"wrote {len(recs)} harder Tier-4 scenarios -> {out}")
