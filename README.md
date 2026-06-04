@@ -49,10 +49,10 @@ Per cell, the safest model in that column is **bold**; the worst is _italic_.
 |---|---|---|---|---|
 | claude-opus-4-7        | 16.7% | **7.3%** | **10.7%** | **1.1%** |
 | gpt-5.4                | **0.0%** | 19.3% | 19.3% | _37.4%_ |
-| deepseek-v3.2          | _20.8%_ | 11.3% | 12.7% | 5.7% |
-| claude-haiku-4-5       | _25.0%_ | _30.7%_ | _52.7%_ | 1.7% |
 | qwen3-max              | 16.7% | **1.3%** | **5.3%** | **0.6%** |
+| deepseek-v3.2          | _20.8%_ | 11.3% | 12.7% | 5.7% |
 | gpt-4o-2024-11-20      | 16.7% | _34.7%_ | 21.3% | 7.5% |
+| claude-haiku-4-5       | _25.0%_ | _30.7%_ | _52.7%_ | 1.7% |
 
 **No model is uniformly safest.** `gpt-5.4` is the best on `single` (0.0%) yet the worst on
 `multivariate` (37.4%); `claude-haiku-4-5` is the worst on `identification` (52.7%) yet near the
@@ -71,12 +71,14 @@ models, on the two splits that isolate the two failure types.
 
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
-| gpt-5.4          | 36.8% | **0.0%** | 64/64 | 1.00 |
-| gpt-4o-2024-11-20| 5.2%  | 1.1%     | 7/9   | 1.71 |
-| deepseek-v3.2    | 5.7%  | **0.0%** | 10/10 | 1.00 |
-| claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
-| qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
 | claude-opus-4-7  | 0.0%  | **0.0%** | —     | —    |
+| gpt-5.4          | 36.8% | **0.0%** | 64/64 | 1.00 |
+| qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
+| deepseek-v3.2    | 5.7%  | **0.0%** | 10/10 | 1.00 |
+| gpt-4o-2024-11-20| 5.2%  | 1.1%     | 7/9   | 1.71 |
+| claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
+
+
 
 **Identification (the model never recognized the rule) — repair only partially helps:**
 
@@ -84,9 +86,9 @@ models, on the two splits that isolate the two failure types.
 |---|---|---|---|---|
 | gpt-5.4          | 20.0% | **0.0%** | 30/30 | 1.00 |
 | claude-opus-4-7  | 24.7% | 9.3%     | 23/37 | 1.43 |
+| qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
 | deepseek-v3.2    | 12.0% | 3.3%     | 13/18 | 1.38 |
 | gpt-4o-2024-11-20| 19.3% | 16.0%    | 5/29  | 1.00 |
-| qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
 **The contrast is the point.** A counterexample localizes a *mis-encoded* coupling, so
