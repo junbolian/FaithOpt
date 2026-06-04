@@ -50,7 +50,7 @@ def make(seed):
         static_checkable=True, note="conflict/empty-set")
 
 if __name__=="__main__":
-    new=[make(7700+i) for i in range(6)]
+    new=[make(7700+i) for i in range(24)]
     with open("FaithConstraint-OR_multivariate.jsonl","a",encoding="utf-8") as f:
         for r in new: f.write(json.dumps(r,ensure_ascii=False)+"\n")
     print(f"appended {len(new)} over-determined conflict records to multivariate")
