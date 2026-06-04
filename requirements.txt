@@ -1,0 +1,12 @@
+# FaithOpt — runtime dependencies
+# Install:  pip install -r requirements.txt
+#
+# Core verifier + benchmark generation + ground-truth checking:
+z3-solver>=4.12
+# Human-readable benchmark export (v0 .xlsx):
+openpyxl>=3.1
+# LLM querying for the bare-LLM and verify-repair experiments
+# (OpenAI-compatible client; the endpoint base_url/key are read from the
+#  environment, see README). Only needed to RUN experiments, not to use the
+#  verifier or regenerate the benchmark.
+openai>=1.0
