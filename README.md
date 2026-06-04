@@ -1,6 +1,4 @@
-# FaithOpt
-
-**Verifying the faithfulness of LLM-generated optimization models to regulatory constraints.**
+# FaithOpt: Verifying the faithfulness of LLM-generated optimization models to regulatory constraints.
 
 FaithOpt checks whether an optimization model produced by a large language model is *provably
 faithful* to the hard constraints stated in regulatory or policy text — without any reference
@@ -8,9 +6,7 @@ answer. It pairs an SMT-based verifier (z3) with a benchmark, **FaithConstraint-
 verify–repair loop.
 
 > Companion code for the paper *"FaithOpt: Verifying the Faithfulness of LLM-Generated
-> Optimization Models to Regulatory Constraints"* by Junbo Jacob Lian, Hanzhang Qin, and
-> Chung-Piaw Teo.
-
+> Optimization Models to Regulatory Constraints"*
 ## The problem
 
 When an LLM turns a manager's request plus regulatory text into an optimization model, it can
@@ -66,23 +62,39 @@ layer that does not depend on which model is used. (95% Wilson CIs are reported 
 `analyze_results.py`; the `single` column excludes 3 out-of-scope marker instances and the
 Easy/Medium rows, which are a sanity check and sit near 0%.)
 
-### 2. The verify–repair loop drives mis-encoding failures to (near) zero
+### 2. The verify–repair loop reveals where repair works — and where it cannot
 
-Bare-LLM vs. FaithOpt violation rate, `max_rounds=3` (lower is better):
+Bare-LLM vs. FaithOpt violation rate after up to 3 repair rounds (lower is better). All six
+models, on the two splits that isolate the two failure types.
 
-| Model | Split | Bare | FaithOpt | Repaired | Avg. rounds |
-|---|---|---|---|---|---|
-| gpt-5.4         | multivariate   | 36.8% | **0.0%** | 64/64 | 1.00 |
-| deepseek-v3.2   | multivariate   | 5.7%  | **0.0%** | 10/10 | 1.00 |
-| claude-haiku-4-5| multivariate   | 1.7%  | 0.6%     | 2/3   | 1.00 |
-| gpt-5.4         | identification | 20.0% | **0.0%** | 30/30 | 1.00 |
-| deepseek-v3.2   | identification | 12.0% | 3.3%     | 13/18 | 1.38 |
+**Multivariate (mis-encoding failures) — repair drives violation to near zero:**
 
-A counterexample localizes a **mis-encoded** coupling, so multivariate failures are repaired
-almost completely in about one round. **Identification** failures — where the model never
-recognized a rule — offer no localizing witness and are only partially repairable (e.g.
-`deepseek-v3.2` leaves a 3.3% residual, needing more rounds). Detection is unconditional;
-repair is conditional on localizability.
+| Model | Bare | FaithOpt | Repaired | Avg. rounds |
+|---|---|---|---|---|
+| gpt-5.4          | 36.8% | **0.0%** | 64/64 | 1.00 |
+| gpt-4o-2024-11-20| 5.2%  | 1.1%     | 7/9   | 1.71 |
+| deepseek-v3.2    | 5.7%  | **0.0%** | 10/10 | 1.00 |
+| claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
+| qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
+| claude-opus-4-7  | 0.0%  | **0.0%** | —     | —    |
+
+**Identification (the model never recognized the rule) — repair only partially helps:**
+
+| Model | Bare | FaithOpt | Repaired | Avg. rounds |
+|---|---|---|---|---|
+| gpt-5.4          | 20.0% | **0.0%** | 30/30 | 1.00 |
+| claude-opus-4-7  | 24.7% | 9.3%     | 23/37 | 1.43 |
+| deepseek-v3.2    | 12.0% | 3.3%     | 13/18 | 1.38 |
+| gpt-4o-2024-11-20| 19.3% | 16.0%    | 5/29  | 1.00 |
+| qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
+| claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
+
+**The contrast is the point.** A counterexample localizes a *mis-encoded* coupling, so
+multivariate failures are repaired almost completely (worst residual 1.1%), often in about one
+round. An *identification* failure offers no localizing witness — a counterexample cannot point
+at a constraint the model never recognized — so large residuals remain (claude-haiku 51.3% →
+32.7%, gpt-4o 19.3% → 16.0%). Detection is unconditional; repair is conditional on
+localizability.
 
 ### 3. The effect is not an artifact of the prompt
 
