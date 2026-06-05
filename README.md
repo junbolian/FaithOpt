@@ -7,6 +7,7 @@ verify–repair loop.
 
 > Companion code for the paper *"FaithOpt: Verifying the Faithfulness of LLM-Generated
 > Optimization Models to Regulatory Constraints"*
+
 ## The problem
 
 When an LLM turns a manager's request plus regulatory text into an optimization model, it can
@@ -31,7 +32,7 @@ ground truth.
   test invoked only when *M* is infeasible. A "faithful" verdict is never a false positive.
 - **Closes the empty-set loophole.** Under jointly infeasible rules, an infeasible model entails
   every rule vacuously, so entailment-only checking certifies a model even after a rule is
-  silently dropped. Coverage is the minimal condition that closes this gap.
+  silently dropped. Coverage is a lightweight condition that closes this gap.
 - **FaithConstraint-OR benchmark.** Four splits — `single`, `multi`, `identification`,
   `multivariate` — that decompose the sources of failure. Ground truth is mechanically generated
   and z3-verified, never produced by an LLM.
@@ -40,8 +41,8 @@ ground truth.
 
 ## Key findings
 
-All numbers below are produced by the scripts in this repo (`formulator.py`,
-`faithopt_loop.py`, `verify_theory.py`, `analyze_results.py`) on the four benchmark splits,
+All numbers below are produced by the scripts in this repo (`run_multigen.py`,
+`per_rule_analysis.py`, `faithopt_loop.py`, `verify_theory.py`) on the four benchmark splits,
 over six frontier models. They are reproducible up to provider-side LLM nondeterminism.
 
 ### 1. Silent violation is high — and *which* model is safest flips by constraint type
@@ -59,20 +60,33 @@ safest model in each column is **bold**, the worst is _italic_.
 | gpt-4o-2024-11-20      | 19.2 ± 2.3 | 31.3 ± 1.8 | 19.3 ± 1.4 | 6.1 ± 0.9 |
 | claude-haiku-4-5       | 15.8 ± 3.5 | _34.9 ± 0.9_ | _50.4 ± 1.9_ | 2.1 ± 0.9 |
 
-**No model is uniformly safest.** `gpt-5.4` is the best on `single` (0.0%) yet the worst on
-`multivariate` (25.4%); `claude-haiku-4-5` is the worst on `identification` (50.4%) yet among the
-best on `multivariate` (2.1%); `qwen3-max` leads on the three harder splits but not on `single`.
-The standard deviations are small (≤ ~3.7 points) — much smaller than the gaps across models and
-splits — so the ranking inversion is robust to generation variance. Reliability cannot be obtained
-by model selection, motivating a verification layer that does not depend on which model is used.
+**The safety ranking is unstable across constraint types, and even the strongest model is not safe
+enough.** `gpt-5.4` is best on `single` (0.0%) yet worst on `multivariate` (25.4%); `claude-haiku-4-5`
+is worst on `identification` (50.4%) yet among the best on `multivariate` (2.1%) — the order
+inverts depending on the constraint type. A broadly strong model *does* exist — `qwen3-max` is the
+safest of the six on all three failure-mode splits — but it still mis-encodes a binding rule on
+~5% of `identification` instances, which is not an acceptable operating point for a regulated
+pricing model, and a deployer cannot know in advance which model is safest for *its* mix of
+constraint types. Standard deviations are small (≤ ~3.7 points), so these effects are robust to
+generation variance. The point is not that no model can be chosen well, but that no available model
+is reliable *enough* to make per-formulation verification unnecessary — so compliance cannot be
+secured by model selection alone.
 (Rates are produced by `run_multigen.py`; the `single` column reports its linear hard+very-hard
 instances, excluding 3 out-of-scope marker instances, and the easy/medium tiers — a sanity check —
 sit near 0%.)
 
-### 2. The verify–repair loop reveals where repair works — and where it cannot
+We also report **per-rule** violation rates (`per_rule_analysis.py`). Because an instance counts as
+violated if *any* of its several rules is, the instance rate compounds a smaller per-rule error:
+for most models the instance figure is partly this aggregation (e.g. gpt-4o on `multi` is ~8%
+per-rule vs ~32% per instance), while for `claude-haiku` the per-rule rate is itself high (genuine
+poor fidelity, not just compounding). On `single` the two rates coincide, as they must.
+
+### 2. The verify–repair loop reveals where repair works well — and where it is incomplete
 
 Bare-LLM vs. FaithOpt violation rate after up to 3 repair rounds (lower is better). All six
-models, on the two splits that isolate the two failure types.
+models, on the two splits that isolate the two failure types. (These are single loop-run numbers;
+the *Bare* column is the one generation entering the loop and can differ from the five-generation
+means above by generation variance.)
 
 **Multivariate (mis-encoding failures) — repair drives violation to near zero:**
 
@@ -87,7 +101,7 @@ models, on the two splits that isolate the two failure types.
 
 
 
-**Identification (the model never recognized the rule) — repair only partially helps:**
+**Identification (rules the model did not recognize) — repair is real but incomplete and model-dependent:**
 
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
@@ -98,12 +112,15 @@ models, on the two splits that isolate the two failure types.
 | gpt-4o-2024-11-20| 19.3% | 16.0%    | 5/29  | 1.00 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
-**The contrast is the point.** A counterexample localizes a *mis-encoded* coupling, so
-multivariate failures are repaired almost completely (worst residual 1.1%), often in about one
-round. An *identification* failure offers no localizing witness — a counterexample cannot point
-at a constraint the model never recognized — so large residuals remain (claude-haiku 51.3% →
-32.7%, gpt-4o 19.3% → 16.0%). Detection is unconditional; repair is conditional on
-localizability.
+**The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so multivariate
+failures are repaired almost completely (worst residual 1.1%), often in one round. For
+*identification* failures the outcome is model-dependent: some models recover fully (gpt-5.4
+20.0% → 0.0%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
+19.3% → 16.0%). The reason is the *kind* of feedback available — a counterexample flags that a
+rule is missing but cannot point at a line to fix (no line was ever written for it), so the model
+must re-derive the rule from the policy, and whether it succeeds varies by model. Detection is
+unconditional; automatic repair is reliable for mis-encodings and only partial for unrecognized
+rules.
 
 ### 3. The effect is not an artifact of the prompt
 
@@ -212,12 +229,18 @@ CODE_README.md              full code & reproducibility guide
   reproducible); gold constraints are computed by formula and independently re-checked with z3.
   `single` is a hand-written baseline. This is *stronger* than human or LLM labeling: anyone can
   regenerate the exact data and verify the answers.
-- **Real operations, abstracted numbers.** The constraint *structures* and pricing *scenarios*
-  are drawn from the real operations of a pharmacy retail chain: reimbursement caps, volume-based procurement floors,
-  gross-margin rules, cross-product budgets, relative-pricing rules. Numeric values are abstracted
-  from realistic ranges rather than disclosing proprietary figures — this protects commercial
-  confidentiality and guarantees no instance can be solved from memorized data, so a correct answer
-  reflects faithful encoding, not recall.
+- **Real operations, abstracted numbers.** The constraint *structures*, *clause wording*, and
+  *distractor items* are drawn from the real price-governance practice of a pharmacy retail chain
+  (winning-bid/procurement caps, reimbursement caps, gross-margin floors, member-tier floors,
+  relative-pricing rules), written in authentic regulatory phrasing; `single` is hand-authored from
+  real cases. Only the numeric values are abstracted from realistic ranges (commercial
+  confidentiality + no memorization), and for the multi-rule splits these real clauses are composed
+  into policy excerpts so the gold set is known exactly. It is neither invented synthetic text nor a
+  transcript of one in-force document.
+- **Human-checked gold.** On 60 instances from the two failure-mode splits (`multivariate`,
+  `identification`), two annotators independently reconstructed the gold *from text alone* (without
+  seeing it); recovery matched the gold on 119/120 instance-reconstructions, the lone miss a
+  transcription slip — indicating the gold is recoverable from the text, not idiosyncratic.
 - **Scope.** Linear constraints, including multivariate cross-variable coupling. Non-linear and
   logical/conditional constraints are out of scope.
 

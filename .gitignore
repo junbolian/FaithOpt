@@ -4,6 +4,7 @@ runs/
 *_faithopt_loop.txt
 
 figs/
+*.pdf
 
 # python
 __pycache__/

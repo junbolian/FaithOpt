@@ -224,7 +224,6 @@ def main():
         fh.write(txt + "\n")
     print("\n" + txt)
     print(f"\nWrote {args.out_prefix}_runs.csv, {args.out_prefix}_summary.csv, {args.out_prefix}_summary.txt")
-    print("Paste multigen_summary.txt back to me and I will revise Section 5 to report mean +/- sd.")
 
 
 if __name__ == "__main__":

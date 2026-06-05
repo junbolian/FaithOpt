@@ -34,6 +34,7 @@ verify–repair loop, then prints the result tables via `analyze_results.py`.
 | `faithopt_verifier.py` | Verifier core: `Var`, `LinCon`, `entails`, `covers`, `audit`. Pure SMT (z3); the module header states the formal faithfulness definition. |
 | `formulator.py` | Bare-LLM harness: prompt → LLM → parse → `audit`; violation rate by tier × family. Per-model `runs/<model>__<split>_detail.txt` logs the model's encoded constraints + fail reasons. Flags: `--model`, `--data`, `--workers`, `--neutral-prompt`, `--mock`. |
 | `run_multigen.py` | Multi-generation harness: runs the bare-LLM measurement R times per instance (default 5) and reports **mean ± sd** of the per-split violation rate across generations, capturing provider-side nondeterminism. Writes `multigen_runs.csv`, `multigen_summary.csv`, `multigen_summary.txt`. Flags: `--models`, `--splits`, `--runs`, `--temperature`, `--workers`, `--mock`. This produces the numbers in the main results table. |
+| `per_rule_analysis.py` | Same generation pipeline, but scores at the level of the individual gold rule: reports **per-rule** vs **per-instance** violation rate (mean ± sd) and a per-rule-family breakdown, to separate "instances pack many rules" from "poor per-rule fidelity." Writes `per_rule_runs.csv`, `per_rule_summary.csv`, `per_rule_by_family.csv`, `per_rule_summary.txt`. Same flags as `run_multigen.py`. |
 | `faithopt_loop.py` | Verify–repair loop: counterexample + missing-count feedback (no gold leakage) → re-query → re-audit, up to `--max-rounds`. Logs each round's raw output. |
 
 ### Benchmark generation + checking
@@ -85,6 +86,10 @@ for r in V.audit(decls, model, gold):
 python formulator.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_multivariate.jsonl --workers 10
 # multi-generation main measurement (5 runs/instance -> mean +/- sd):
 python run_multigen.py --runs 5 --temperature 0 --workers 10 \
+    --models claude-opus-4-7 gpt-5.4 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
+    --splits multi identification multivariate single
+# per-rule vs per-instance breakdown (same models/splits):
+python per_rule_analysis.py --runs 5 --temperature 0 --workers 8 \
     --models claude-opus-4-7 gpt-5.4 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
     --splits multi identification multivariate single
 # verify-repair loop:

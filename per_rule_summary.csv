@@ -1,0 +1,2 @@
+model,split,per_rule_mean,per_rule_sd,instance_mean,n_runs
+qwen3-max,multivariate,0.02,0.04,0.11,5

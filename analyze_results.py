@@ -166,4 +166,3 @@ if __name__ == "__main__":
     bare_table(a.runs)
     neutral_compare(a.runs)
     loop_table(a.runs)
-    print("Fill the printed numbers into the \\todo placeholders in sections 4-6.")

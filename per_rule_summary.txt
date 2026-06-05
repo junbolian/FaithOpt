@@ -1,0 +1,6 @@
+FaithConstraint-OR per-RULE vs INSTANCE violation rate (runs=5, temperature=0.0, Hard+Very-hard)
+per-rule = fraction of individual gold rules unfaithfully encoded; instance = 'any rule fails'.
+
+model                         split           per-rule (mean+/-sd)    instance (mean) 
+--------------------------------------------------------------------------------------
+qwen3-max                     multivariate       0.0 +/- 0.0          0.1

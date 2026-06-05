@@ -1,7 +1,5 @@
 # FaithConstraint-OR - Data Card
 
-Generated: 2026-06-03
-
 One benchmark, four splits, evaluated separately (do **not** merge). All gold
 constraints are mechanically generated and z3-verified. The constraint **structures and
 scenarios** are drawn from real regulated pharmacy operations (pricing, reimbursement,
@@ -86,6 +84,10 @@ with a `_manifest` line carrying the split's identity; data readers skip it.
 ```
 
 ## Notes
+- Gold validity was spot-checked by **blind human recovery**: on 60 instances from the
+  `multivariate` and `identification` splits, two annotators independently reconstructed the gold
+  from text alone (without seeing it), matching it on 119/120 instance-reconstructions (the lone
+  miss a transcription slip) — the gold is recoverable from the text, not idiosyncratic.
 - `single` includes 3 intentional out-of-scope marker instances (missing-value /
   temporal / discrete-ladder) with empty gold; exclude them from main violation stats.
 - `multivariate` includes over-determined-conflict instances probing the empty-set loophole.

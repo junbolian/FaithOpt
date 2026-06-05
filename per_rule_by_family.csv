@@ -1,0 +1,14 @@
+model,split,family,per_rule_pct,n_rule_instances
+qwen3-max,multivariate,a_cap,0.0,495
+qwen3-max,multivariate,a_floor,0.0,485
+qwen3-max,multivariate,agg_margin,0.0,465
+qwen3-max,multivariate,b_cap,0.0,490
+qwen3-max,multivariate,b_floor,0.0,515
+qwen3-max,multivariate,basket_cap,0.0,395
+qwen3-max,multivariate,budget_cap,0.22,465
+qwen3-max,multivariate,gap_a,0.0,120
+qwen3-max,multivariate,gap_b,0.0,120
+qwen3-max,multivariate,order_rel,0.0,485
+qwen3-max,multivariate,sum_floor,0.0,415
+qwen3-max,multivariate,sum_hi,0.0,120
+qwen3-max,multivariate,sum_lo,0.0,120
