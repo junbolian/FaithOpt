@@ -213,8 +213,7 @@ CODE_README.md              full code & reproducibility guide
   `single` is a hand-written baseline. This is *stronger* than human or LLM labeling: anyone can
   regenerate the exact data and verify the answers.
 - **Real operations, abstracted numbers.** The constraint *structures* and pricing *scenarios*
-  are drawn from the real operations of a top-100 Chinese pharmacy retail chain (one author serves
-  as its Chief Analytics Officer): reimbursement caps, volume-based procurement floors,
+  are drawn from the real operations of a pharmacy retail chain: reimbursement caps, volume-based procurement floors,
   gross-margin rules, cross-product budgets, relative-pricing rules. Numeric values are abstracted
   from realistic ranges rather than disclosing proprietary figures — this protects commercial
   confidentiality and guarantees no instance can be solved from memorized data, so a correct answer
