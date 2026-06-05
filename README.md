@@ -20,11 +20,15 @@ ground truth.
 ## What FaithOpt does
 
 - **Faithfulness criterion.** A model *M* is faithful to a rule set *G* iff, for every rule
-  *c* ∈ *G*: (1) **soundness** — *M* admits no point violating *c*; and (2) **coverage** — some
-  single constraint of *M* actually encodes *c*. Defined over the feasible region, not syntax.
+  *c* ∈ *G*: (1) **soundness** — *M* admits no point violating *c*; and (2) **coverage
+  (non-vacuity)** — *if M is infeasible*, some single constraint of *M* actually encodes *c*.
+  Defined over the feasible region, not syntax. Coverage is gated on infeasibility: when *M* is
+  feasible (the common case), soundness alone decides faithfulness, so a rule encoded jointly by
+  several constraints is correctly accepted; the per-constraint witness is needed only when *M* is
+  infeasible, to stop vacuous entailment from hiding a dropped rule.
 - **A provably sound, reference-free verifier.** Realized as an SMT procedure (z3): soundness is
   decided by checking *M* ∧ ¬*c* for unsatisfiability; coverage by a per-constraint entailment
-  test. A "faithful" verdict is never a false positive.
+  test invoked only when *M* is infeasible. A "faithful" verdict is never a false positive.
 - **Closes the empty-set loophole.** Under jointly infeasible rules, an infeasible model entails
   every rule vacuously, so entailment-only checking certifies a model even after a rule is
   silently dropped. Coverage is the minimal condition that closes this gap.
@@ -42,25 +46,28 @@ over six frontier models. They are reproducible up to provider-side LLM nondeter
 
 ### 1. Silent violation is high — and *which* model is safest flips by constraint type
 
-Bare-LLM violation rate on the hard + very-hard instances of each split (lower is better).
-Per cell, the safest model in that column is **bold**; the worst is _italic_.
+Bare-LLM violation rate (%) on the hard + very-hard instances of each split, reported as
+**mean ± sd over five independent generations** per instance (temperature 0). Lower is better; the
+safest model in each column is **bold**, the worst is _italic_.
 
-| Model | single (n=24) | multi (n=150) | identification (n=150) | multivariate (n=174) |
+| Model | single (n=27) | multi (n=150) | identification (n=150) | multivariate (n=174) |
 |---|---|---|---|---|
-| claude-opus-4-7        | 16.7% | **7.3%** | **10.7%** | **1.1%** |
-| gpt-5.4                | **0.0%** | 19.3% | 19.3% | _37.4%_ |
-| qwen3-max              | 16.7% | **1.3%** | **5.3%** | **0.6%** |
-| deepseek-v3.2          | _20.8%_ | 11.3% | 12.7% | 5.7% |
-| gpt-4o-2024-11-20      | 16.7% | _34.7%_ | 21.3% | 7.5% |
-| claude-haiku-4-5       | _25.0%_ | _30.7%_ | _52.7%_ | 1.7% |
+| claude-opus-4-7        | 10.0 ± 3.7 | 6.0 ± 1.1 | 24.7 ± 1.6 | 0.8 ± 0.3 |
+| gpt-5.4                | **0.0 ± 0.0** | 19.6 ± 1.1 | 18.1 ± 1.6 | _25.4 ± 0.8_ |
+| qwen3-max              | 15.0 ± 2.3 | **1.5 ± 0.3** | **5.1 ± 1.3** | **0.5 ± 0.3** |
+| deepseek-v3.2          | _22.5 ± 3.7_ | 12.8 ± 1.5 | 12.4 ± 1.9 | 5.9 ± 0.8 |
+| gpt-4o-2024-11-20      | 19.2 ± 2.3 | 31.3 ± 1.8 | 19.3 ± 1.4 | 6.1 ± 0.9 |
+| claude-haiku-4-5       | 15.8 ± 3.5 | _34.9 ± 0.9_ | _50.4 ± 1.9_ | 2.1 ± 0.9 |
 
 **No model is uniformly safest.** `gpt-5.4` is the best on `single` (0.0%) yet the worst on
-`multivariate` (37.4%); `claude-haiku-4-5` is the worst on `identification` (52.7%) yet near the
-best on `multivariate` (1.7%); `claude-opus-4-7` and `qwen3-max` lead on the harder splits but
-not on `single`. Reliability cannot be obtained by model selection — motivating a verification
-layer that does not depend on which model is used. (95% Wilson CIs are reported by
-`analyze_results.py`; the `single` column excludes 3 out-of-scope marker instances and the
-Easy/Medium rows, which are a sanity check and sit near 0%.)
+`multivariate` (25.4%); `claude-haiku-4-5` is the worst on `identification` (50.4%) yet among the
+best on `multivariate` (2.1%); `qwen3-max` leads on the three harder splits but not on `single`.
+The standard deviations are small (≤ ~3.7 points) — much smaller than the gaps across models and
+splits — so the ranking inversion is robust to generation variance. Reliability cannot be obtained
+by model selection, motivating a verification layer that does not depend on which model is used.
+(Rates are produced by `run_multigen.py`; the `single` column reports its linear hard+very-hard
+instances, excluding 3 out-of-scope marker instances, and the easy/medium tiers — a sanity check —
+sit near 0%.)
 
 ### 2. The verify–repair loop reveals where repair works — and where it cannot
 
@@ -111,11 +118,13 @@ out a prompt-induced effect):
 
 ### 4. Soundness alone is incomplete; coverage closes the gap
 
-`verify_theory.py` constructs, on the benchmark's conflict scenarios, models with a silently
-dropped rule and checks them two ways: **across 225 conflict scenarios, entailment-only
-checking is fooled into certifying a model with a dropped rule in 158 cases — all 158 of which
-the coverage-augmented audit catches.** This is the empirical backing for the completeness
-result.
+`verify_theory.py` constructs, on the benchmark's conflicting instances, models with a silently
+dropped rule and checks them two ways. Jointly infeasible gold sets arise naturally as harder
+instances accumulate constraints — **225 conflicting instances across the `multi`,
+`identification`, and `multivariate` splits** (the 24 purpose-built over-determined instances are
+a curated subset). On constructed drops from these, **entailment-only checking is fooled into
+certifying a model with a dropped rule in 158 cases — all 158 of which the feasibility-gated audit
+catches.** This is the empirical backing for the completeness result.
 
 ## Quick start
 
@@ -133,11 +142,30 @@ Minimal verifier usage:
 ```python
 import faithopt_verifier as V
 decls = [V.Var("p1","real",lb=0,ub=100), V.Var("p2","real",lb=0,ub=100)]
+
+# (a) A feasible model that drops the relative-pricing rule: soundness catches it directly.
 gold  = [V.LinCon("budget", {"p1":1.0,"p2":1.0}, "<=", 30.0),
          V.LinCon("rel",    {"p1":1.0,"p2":-1.0}, "<=", 0.0)]   # p1 <= p2
 model = [V.LinCon("m1", {"p1":1.0,"p2":1.0}, "<=", 30.0)]       # dropped the relative rule
 for r in V.audit(decls, model, gold):
-    print(r["cid"], r["faithful"], r["reason"])   # 'rel' -> False, not_covered(dropped)
+    print(r["cid"], r["faithful"], r["reason"])   # 'rel' -> False, violated (admits p1=30,p2=0)
+
+# (b) The empty-set loophole: gold is over-determined (infeasible), and the model stays
+#     infeasible after a rule is dropped. Entailment alone is fooled; coverage catches it.
+gold2 = [V.LinCon("cap",    {"p1":1.0,"p2":1.0}, "<=", 20.0),
+         V.LinCon("floor",  {"p1":1.0,"p2":1.0}, ">=", 36.0),    # this rule is dropped
+         V.LinCon("digap",  {"p1":1.0,"p2":-1.0}, ">=", 10.0),
+         V.LinCon("digap2", {"p1":-1.0,"p2":1.0}, ">=", 10.0)]
+model2 = [c for c in gold2 if c.cid != "floor"]                  # still infeasible (digap vs digap2)
+for r in V.audit(decls, model2, gold2):
+    print(r["cid"], r["faithful"], r["reason"])   # 'floor' -> False, not_covered(dropped)
+
+# (c) Distributed encoding is NOT a false alarm: a feasible model whose constraints jointly
+#     entail the gold rule passes by soundness.
+gold3  = [V.LinCon("sum", {"p1":1.0,"p2":1.0}, "<=", 30.0)]
+model3 = [V.LinCon("a", {"p1":1.0}, "<=", 10.0), V.LinCon("b", {"p2":1.0}, "<=", 20.0)]
+for r in V.audit(decls, model3, gold3):
+    print(r["cid"], r["faithful"], r["reason"])   # 'sum' -> True, ok (jointly entailed)
 ```
 
 ## Running the experiments
@@ -160,10 +188,11 @@ how to run individual steps, and **[DATA_CARD.md](DATA_CARD.md)** for benchmark 
 
 ```
 faithopt_verifier.py        SMT verifier core (Var, LinCon, entails, covers, audit)
-formulator.py               bare-LLM harness
+formulator.py               bare-LLM harness (single generation per instance)
+run_multigen.py             multi-generation harness: 5 runs/instance -> mean ± sd
 faithopt_loop.py            verify-repair loop
 verify_theory.py            empirical backing for the theory (Path A / Path B)
-analyze_results.py          computes the result tables (with Wilson CIs) from runs/
+analyze_results.py          single-run result tables (Wilson CIs) from runs/
 generate_tier2.py           generator: multi split
 generate_tier3.py           generator: identification split
 generate_tier4_multivar.py  generator: multivariate split
@@ -183,9 +212,13 @@ CODE_README.md              full code & reproducibility guide
   reproducible); gold constraints are computed by formula and independently re-checked with z3.
   `single` is a hand-written baseline. This is *stronger* than human or LLM labeling: anyone can
   regenerate the exact data and verify the answers.
-- **Real structure, synthetic numbers.** Constraint *structures* are real regulated
-  pharmacy-operations rules (pricing, reimbursement, procurement, assortment); numeric values
-  are synthetic, for privacy.
+- **Real operations, abstracted numbers.** The constraint *structures* and pricing *scenarios*
+  are drawn from the real operations of a top-100 Chinese pharmacy retail chain (one author serves
+  as its Chief Analytics Officer): reimbursement caps, volume-based procurement floors,
+  gross-margin rules, cross-product budgets, relative-pricing rules. Numeric values are abstracted
+  from realistic ranges rather than disclosing proprietary figures — this protects commercial
+  confidentiality and guarantees no instance can be solved from memorized data, so a correct answer
+  reflects faithful encoding, not recall.
 - **Scope.** Linear constraints, including multivariate cross-variable coupling. Non-linear and
   logical/conditional constraints are out of scope.
 

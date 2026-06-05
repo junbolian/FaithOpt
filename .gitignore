@@ -3,6 +3,8 @@ runs/
 *_detail.txt
 *_faithopt_loop.txt
 
+figs/
+
 # python
 __pycache__/
 *.py[cod]

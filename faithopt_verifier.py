@@ -122,12 +122,23 @@ def entails(decls: list[Var], model: list[LinCon], c: LinCon):
     return None, None
 
 
+def model_feasible(decls: list[Var], model: list[LinCon]) -> bool:
+    """Is the model's own feasible region non-empty? Coverage is only needed when this is False
+    (an infeasible model entails every rule vacuously, which is the empty-set loophole)."""
+    zvars, domain = _make_vars(decls)
+    s = z3.Solver()
+    for d in domain:
+        s.add(d)
+    for m in model:
+        s.add(_compile(m, zvars))
+    return s.check() == z3.sat
+
+
 def covers(decls: list[Var], model: list[LinCon], c: LinCon):
-    """Completeness: is gold constraint c actually REPRESENTED by the model?
-    True iff SOME SINGLE model constraint m, on its own, entails c
-    (i.e. m is at least as tight as c). Independent of global feasibility, so an
-    infeasible (empty-set) model cannot 'cover' a constraint it never encoded.
-    Keeping only a tighter dominating constraint (e.g. p<=6.25 covers gold p<=12) is fine."""
+    """Completeness (per-rule witness): is gold constraint c REPRESENTED by some single model
+    constraint m that, on its own, entails c (m at least as tight as c)? This per-singleton test
+    never forms Feas(M), so an infeasible (empty-set) model cannot 'cover' a constraint it never
+    encoded. A tighter dominating constraint (e.g. p<=6.25 covers gold p<=12) is fine."""
     for m in model:
         v, _ = entails(decls, [m], c)
         if v is True:
@@ -135,17 +146,26 @@ def covers(decls: list[Var], model: list[LinCon], c: LinCon):
     return False
 
 def audit(decls: list[Var], model: list[LinCon], gold_hard: list[LinCon]):
-    """Verify a model against the full gold hard-constraint set; return per-constraint result."""
+    """Verify a model against the full gold hard-constraint set; return per-constraint result.
+
+    Coverage is gated on feasibility (matches Definition 2 in the paper): if the model is
+    feasible, soundness alone decides each rule, so a rule encoded jointly by several constraints
+    (distributed encoding) is correctly accepted with no false alarm. Coverage's per-rule witness
+    is invoked only when the model is infeasible, to stop vacuous entailment from masking a drop."""
     report = []
+    feasible = model_feasible(decls, model)
     for c in gold_hard:
         if not c.hard:
             continue
-        sound, ce = entails(decls, model, c)          # M does not permit violating c
-        covered = covers(decls, model, c)             # M actually encodes c (no empty-set loophole)
-        faithful = bool(sound) and covered
-        reason = ("ok" if faithful else
-                  ("not_covered(dropped)" if (sound and not covered) else
-                   "violated"))
+        sound, ce = entails(decls, model, c)          # M does not permit a point violating c
+        if not sound:
+            faithful, reason = False, "violated"
+        elif feasible:
+            faithful, reason = True, "ok"             # feasible M: soundness suffices
+        elif covers(decls, model, c):
+            faithful, reason = True, "ok"             # infeasible M but rule individually witnessed
+        else:
+            faithful, reason = False, "not_covered(dropped)"  # infeasible & unwitnessed: silent drop
         report.append({"cid": c.cid, "faithful": faithful, "counterexample": ce,
                        "reason": reason, "source_span": c.source_span})
     return report
