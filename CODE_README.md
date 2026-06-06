@@ -46,6 +46,7 @@ verify–repair loop, then prints the result tables via `analyze_results.py`.
 | `verify_theory.py` | Empirical backing for the theory: Path A (entailment-only is incomplete; coverage closes it) and Path B (failure-status decomposition for the repairability account). |
 | `analyze_results.py` | Computes single-run result tables (bare-LLM with Wilson CIs, neutral-vs-full, loop bare→repaired with round distribution, status decomposition) from `runs/`. For the multi-generation main table use `run_multigen.py`. |
 | `faithopt_figures.py` | Regenerates the publication figures (ranking-flip slopegraph, grouped violation bars with ±sd error bars, repair panels) into `figs/`. Edit the `RATE`/`SD` blocks to refresh with new numbers. |
+| `scaling_bench.py` | Verifier scaling benchmark: times `audit()` versus problem size (variables × constraints, real/int). **Pure z3, no API.** Writes `scaling_runs.csv`, `scaling_summary.txt`. |
 
 ### Data (`FaithConstraint-OR`, four splits — evaluate separately, do **not** merge)
 | File | n | What it tests |
@@ -86,16 +87,18 @@ for r in V.audit(decls, model, gold):
 python formulator.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_multivariate.jsonl --workers 10
 # multi-generation main measurement (5 runs/instance -> mean +/- sd):
 python run_multigen.py --runs 5 --temperature 0 --workers 10 \
-    --models claude-opus-4-7 gpt-5.4 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
+    --models claude-opus-4-7 gpt-5.4-2026-03-05 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
     --splits multi identification multivariate single
 # per-rule vs per-instance breakdown (same models/splits):
 python per_rule_analysis.py --runs 5 --temperature 0 --workers 8 \
-    --models claude-opus-4-7 gpt-5.4 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
+    --models claude-opus-4-7 gpt-5.4-2026-03-05 deepseek-v3.2 claude-haiku-4-5-20251001 qwen3-max gpt-4o-2024-11-20 \
     --splits multi identification multivariate single
 # verify-repair loop:
 python faithopt_loop.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_multivariate.jsonl --max-rounds 3 --workers 10
 # tables and figures:
 python analyze_results.py --runs runs
 python faithopt_figures.py
+# verifier scaling benchmark (no API):
+python scaling_bench.py
 ```
 Run with `--mock` (no API key) to validate the pipeline end-to-end.

@@ -43,7 +43,7 @@ ground truth.
 
 All numbers below are produced by the scripts in this repo (`run_multigen.py`,
 `per_rule_analysis.py`, `faithopt_loop.py`, `verify_theory.py`) on the four benchmark splits,
-over six frontier models. They are reproducible up to provider-side LLM nondeterminism.
+over six models spanning current frontier and lighter-weight systems. They are reproducible up to provider-side LLM nondeterminism.
 
 ### 1. Silent violation is high — and *which* model is safest flips by constraint type
 
@@ -51,23 +51,23 @@ Bare-LLM violation rate (%) on the hard + very-hard instances of each split, rep
 **mean ± sd over five independent generations** per instance (temperature 0). Lower is better; the
 safest model in each column is **bold**, the worst is _italic_.
 
-| Model | single (n=27) | multi (n=150) | identification (n=150) | multivariate (n=174) |
+| Model | single (n=24) | multi (n=150) | identification (n=150) | multivariate (n=174) |
 |---|---|---|---|---|
-| claude-opus-4-7        | 10.0 ± 3.7 | 6.0 ± 1.1 | 24.7 ± 1.6 | 0.8 ± 0.3 |
-| gpt-5.4                | **0.0 ± 0.0** | 19.6 ± 1.1 | 18.1 ± 1.6 | _25.4 ± 0.8_ |
-| qwen3-max              | 15.0 ± 2.3 | **1.5 ± 0.3** | **5.1 ± 1.3** | **0.5 ± 0.3** |
-| deepseek-v3.2          | _22.5 ± 3.7_ | 12.8 ± 1.5 | 12.4 ± 1.9 | 5.9 ± 0.8 |
-| gpt-4o-2024-11-20      | 19.2 ± 2.3 | 31.3 ± 1.8 | 19.3 ± 1.4 | 6.1 ± 0.9 |
-| claude-haiku-4-5       | 15.8 ± 3.5 | _34.9 ± 0.9_ | _50.4 ± 1.9_ | 2.1 ± 0.9 |
+| claude-opus-4-7        | **9.2 ± 1.9** | 6.0 ± 1.1 | 24.7 ± 1.6 | 0.8 ± 0.3 |
+| gpt-5.4                | 11.7 ± 1.9 | 4.3 ± 0.4 | 20.7 ± 1.6 | **0.2 ± 0.3** |
+| qwen3-max              | 20.0 ± 3.5 | **1.5 ± 0.3** | **5.1 ± 1.3** | 0.5 ± 0.3 |
+| deepseek-v3.2          | _21.7 ± 5.4_ | 12.8 ± 1.5 | 12.4 ± 1.9 | 5.9 ± 0.8 |
+| gpt-4o-2024-11-20      | 20.0 ± 6.2 | 31.3 ± 1.8 | 19.3 ± 1.4 | _6.1 ± 0.9_ |
+| claude-haiku-4-5       | 16.7 ± 3.0 | _34.9 ± 0.9_ | _50.4 ± 1.9_ | 2.1 ± 0.9 |
 
 **The safety ranking is unstable across constraint types, and even the strongest model is not safe
-enough.** `gpt-5.4` is best on `single` (0.0%) yet worst on `multivariate` (25.4%); `claude-haiku-4-5`
-is worst on `identification` (50.4%) yet among the best on `multivariate` (2.1%) — the order
+enough.** `gpt-5.4` is the safest on `multivariate` (0.2%) yet among the worst on `identification` (20.7%); `claude-haiku-4-5`
+is the reverse — worst on `identification` (50.4%) yet among the safest on `multivariate` (2.1%) — the order
 inverts depending on the constraint type. A broadly strong model *does* exist — `qwen3-max` is the
-safest of the six on all three failure-mode splits — but it still mis-encodes a binding rule on
+safest of the six on two of the three failure-mode splits (`multi`, `identification`) and near-safest on the third — but it still mis-encodes a binding rule on
 ~5% of `identification` instances, which is not an acceptable operating point for a regulated
 pricing model, and a deployer cannot know in advance which model is safest for *its* mix of
-constraint types. Standard deviations are small (≤ ~3.7 points), so these effects are robust to
+constraint types. Standard deviations are small relative to the gaps that define these effects, so they are robust to
 generation variance. The point is not that no model can be chosen well, but that no available model
 is reliable *enough* to make per-formulation verification unnecessary — so compliance cannot be
 secured by model selection alone.
@@ -79,7 +79,7 @@ We also report **per-rule** violation rates (`per_rule_analysis.py`). Because an
 violated if *any* of its several rules is, the instance rate compounds a smaller per-rule error:
 for most models the instance figure is partly this aggregation (e.g. gpt-4o on `multi` is ~8%
 per-rule vs ~32% per instance), while for `claude-haiku` the per-rule rate is itself high (genuine
-poor fidelity, not just compounding). On `single` the two rates coincide, as they must.
+poor fidelity, not just compounding). On `single`, with mostly one rule per instance, the two rates are close.
 
 ### 2. The verify–repair loop reveals where repair works well — and where it is incomplete
 
@@ -93,10 +93,10 @@ means above by generation variance.)
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
 | claude-opus-4-7  | 0.0%  | **0.0%** | —     | —    |
-| gpt-5.4          | 36.8% | **0.0%** | 64/64 | 1.00 |
+| gpt-5.4          | 1.7% | **0.0%** | 3/3 | 1.00 |
 | qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
 | deepseek-v3.2    | 5.7%  | **0.0%** | 10/10 | 1.00 |
-| gpt-4o-2024-11-20| 5.2%  | 1.1%     | 7/9   | 1.71 |
+| gpt-4o| 5.2%  | 1.1%     | 7/9   | 1.71 |
 | claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
 
 
@@ -106,16 +106,16 @@ means above by generation variance.)
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
 | claude-opus-4-7  | 24.7% | 9.3%     | 23/37 | 1.43 |
-| gpt-5.4          | 20.0% | **0.0%** | 30/30 | 1.00 |
+| gpt-5.4          | 21.3% | 4.0% | 26/32 | 1.12 |
 | qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
-| deepseek-v3.2    | 12.0% | 3.3%     | 13/18 | 1.38 |
-| gpt-4o-2024-11-20| 19.3% | 16.0%    | 5/29  | 1.00 |
+| deepseek-v3.2    | 12.0% | **3.3%**     | 13/18 | 1.38 |
+| gpt-4o| 19.3% | 16.0%    | 5/29  | 1.00 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
 **The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so multivariate
 failures are repaired almost completely (worst residual 1.1%), often in one round. For
-*identification* failures the outcome is model-dependent: some models recover fully (gpt-5.4
-20.0% → 0.0%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
+*identification* failures the outcome is model-dependent: some models recover well (gpt-5.4
+21.3% → 4.0%, deepseek 12.0% → 3.3%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
 19.3% → 16.0%). The reason is the *kind* of feedback available — a counterexample flags that a
 rule is missing but cannot point at a line to fix (no line was ever written for it), so the model
 must re-derive the rule from the policy, and whether it succeeds varies by model. Detection is
@@ -129,7 +129,7 @@ out a prompt-induced effect):
 
 | Model | Full prompt | Neutral prompt |
 |---|---|---|
-| gpt-5.4          | 19.3% | 62.7% |
+| gpt-5.4          | 21.3% | 54.0% |
 | deepseek-v3.2    | 12.7% | 73.3% |
 | claude-haiku-4-5 | 52.7% | 78.7% |
 
@@ -210,6 +210,8 @@ run_multigen.py             multi-generation harness: 5 runs/instance -> mean ±
 faithopt_loop.py            verify-repair loop
 verify_theory.py            empirical backing for the theory (Path A / Path B)
 analyze_results.py          single-run result tables (Wilson CIs) from runs/
+per_rule_analysis.py        per-rule vs per-instance breakdown
+scaling_bench.py            verifier scaling benchmark (pure z3 timing; no API)
 generate_tier2.py           generator: multi split
 generate_tier3.py           generator: identification split
 generate_tier4_multivar.py  generator: multivariate split
