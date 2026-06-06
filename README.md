@@ -1,4 +1,4 @@
-# FaithOpt: Verifying the faithfulness of LLM-generated optimization models to regulatory constraints.
+# FaithOpt: Verifying the faithfulness of LLM-generated optimization models to regulatory constraints
 
 FaithOpt checks whether an optimization model produced by a large language model is *provably
 faithful* to the hard constraints stated in regulatory or policy text — without any reference
