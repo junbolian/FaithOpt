@@ -28,13 +28,15 @@ DATA_TAG = ""   # set in __main__ from --data; appended to loop detail filename
 _Z3_LOCK = threading.Lock()   # z3 is not thread-safe; serialize only the (fast) audit calls
 
 # ----------------------------- feedback (no gold leakage) -----------------------------
-def build_feedback(rec, M, report):
+def build_feedback(rec, M, report, no_coverage=False):
     """Repair message from the audit. Does NOT reveal gold rhs values and does NOT
     use internal constraint ids (the model only sees the numbered policy text).
     We give: (a) a concrete price point the model wrongly allows, and (b) how many
-    hard constraints appear missing -- then ask the model to re-read and re-extract."""
+    hard constraints appear missing -- then ask the model to re-read and re-extract.
+    Ablation: when no_coverage=True the coverage signal is suppressed (the model is
+    never told a rule is missing), mirroring a verifier that checks soundness only."""
     n_violated = sum(1 for r in report if (not r["faithful"]) and r.get("reason") != "not_covered(dropped)")
-    n_missing  = sum(1 for r in report if (not r["faithful"]) and r.get("reason") == "not_covered(dropped)")
+    n_missing  = 0 if no_coverage else sum(1 for r in report if (not r["faithful"]) and r.get("reason") == "not_covered(dropped)")
     # collect one concrete counterexample if any
     ce_pt = None
     for r in report:
@@ -65,7 +67,7 @@ def build_feedback(rec, M, report):
     )
 
 # ----------------------------- one record through the loop -----------------------------
-def run_record(rec, caller, neutral, max_rounds):
+def run_record(rec, caller, neutral, max_rounds, no_coverage=False):
     decls, gold = FB.gold_of(rec)
     base_prompt = FB.build_prompt(rec, neutral)
     history = []   # (round, status, violated, n_viol, raw_excerpt)
@@ -82,7 +84,11 @@ def run_record(rec, caller, neutral, max_rounds):
                 with _Z3_LOCK:
                     report = audit(decls, M, gold)
                 forced = (status == "ok_dropped_unknown")
-                violated = any(r["faithful"] is False for r in report) or forced
+                if no_coverage:
+                    violated = any((r["faithful"] is False and r.get("reason") != "not_covered(dropped)")
+                                   for r in report) or forced
+                else:
+                    violated = any(r["faithful"] is False for r in report) or forced
             except Exception:
                 violated, report = True, []
         nviol = sum(1 for r in report if r["faithful"] is False)
@@ -93,7 +99,7 @@ def run_record(rec, caller, neutral, max_rounds):
         if (not violated) or rounds >= max_rounds:
             break
         # build feedback and ask for a repair
-        fb = build_feedback(rec, M, report)
+        fb = build_feedback(rec, M, report, no_coverage)
         repair_prompt = base_prompt + "\n\n=== VERIFIER FEEDBACK (round %d) ===\n" % (rounds + 1) + fb
         raw = caller(repair_prompt, rec)
         rounds += 1
@@ -103,14 +109,14 @@ def run_record(rec, caller, neutral, max_rounds):
             "history": history}
 
 # ----------------------------- run a model over the dataset -----------------------------
-def run_model(records, model, caller, neutral, max_rounds, workers=1):
+def run_model(records, model, caller, neutral, max_rounds, workers=1, no_coverage=False):
     todo = [r for r in records if r["static_checkable"]]
     results = [None]*len(todo)
     done = 0
     def task(i):
         rec = todo[i]
         try:
-            return i, run_record(rec, caller, neutral, max_rounds)
+            return i, run_record(rec, caller, neutral, max_rounds, no_coverage)
         except Exception as e:
             return i, {"id": rec["id"], "tier": rec["tier"], "bare_violated": True,
                        "final_violated": True, "rounds_used": 0, "fixed": False, "error": str(e)}
@@ -169,6 +175,8 @@ if __name__ == "__main__":
     ap.add_argument("--neutral-prompt", action="store_true")
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--workers", type=int, default=1)
+    ap.add_argument("--no-coverage", action="store_true",
+                    help="ablation: soundness-only verdict (ignore the coverage condition)")
     args = ap.parse_args()
     random.seed(args.seed)
     import os as _os
@@ -195,12 +203,12 @@ if __name__ == "__main__":
 
     summaries = []
     if args.mock:
-        res = run_model(records, "MOCK", mock_caller_factory(), args.neutral_prompt, args.max_rounds, args.workers)
+        res = run_model(records, "MOCK", mock_caller_factory(), args.neutral_prompt, args.max_rounds, args.workers, args.no_coverage)
         summarize(res, "MOCK", args.max_rounds); print("  detail:", write_detail(res, "MOCK"))
     elif args.model:
         for m in args.model:
             caller = (lambda _m: (lambda prompt, rec: FB.call_real_llm(_m, prompt)))(m)
-            res = run_model(records, m, caller, args.neutral_prompt, args.max_rounds, args.workers)
+            res = run_model(records, m, caller, args.neutral_prompt, args.max_rounds, args.workers, args.no_coverage)
             summaries.append(summarize(res, m, args.max_rounds))
             print("  detail:", write_detail(res, m))
         if len(summaries) > 1:

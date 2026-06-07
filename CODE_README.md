@@ -35,7 +35,7 @@ verify–repair loop, then prints the result tables via `analyze_results.py`.
 | `formulator.py` | Bare-LLM harness: prompt → LLM → parse → `audit`; violation rate by tier × family. Per-model `runs/<model>__<split>_detail.txt` logs the model's encoded constraints + fail reasons. Flags: `--model`, `--data`, `--workers`, `--neutral-prompt`, `--mock`. |
 | `run_multigen.py` | Multi-generation harness: runs the bare-LLM measurement R times per instance (default 5) and reports **mean ± sd** of the per-split violation rate across generations, capturing provider-side nondeterminism. Writes `multigen_runs.csv`, `multigen_summary.csv`, `multigen_summary.txt`. Flags: `--models`, `--splits`, `--runs`, `--temperature`, `--workers`, `--mock`. This produces the numbers in the main results table. |
 | `per_rule_analysis.py` | Same generation pipeline, but scores at the level of the individual gold rule: reports **per-rule** vs **per-instance** violation rate (mean ± sd) and a per-rule-family breakdown, to separate "instances pack many rules" from "poor per-rule fidelity." Writes `per_rule_runs.csv`, `per_rule_summary.csv`, `per_rule_by_family.csv`, `per_rule_summary.txt`. Same flags as `run_multigen.py`. |
-| `faithopt_loop.py` | Verify–repair loop: counterexample + missing-count feedback (no gold leakage) → re-query → re-audit, up to `--max-rounds`. Logs each round's raw output. |
+| `faithopt_loop.py` | Verify–repair loop: counterexample + missing-count feedback (no gold leakage) → re-query → re-audit, up to `--max-rounds`. Logs each round's raw output. `--no-coverage` ablates the coverage condition (soundness-only verdict) and writes to a `*_nocov_*` detail file. |
 
 ### Benchmark generation + checking
 | File | Role |
@@ -45,8 +45,9 @@ verify–repair loop, then prints the result tables via `analyze_results.py`.
 | `make_data_card.py` | Scans the splits and (re)generates `DATA_CARD.md`. |
 | `verify_theory.py` | Empirical backing for the theory: Path A (entailment-only is incomplete; coverage closes it) and Path B (failure-status decomposition for the repairability account). |
 | `analyze_results.py` | Computes single-run result tables (bare-LLM with Wilson CIs, neutral-vs-full, loop bare→repaired with round distribution, status decomposition) from `runs/`. For the multi-generation main table use `run_multigen.py`. |
-| `faithopt_figures.py` | Regenerates the publication figures (ranking-flip slopegraph, grouped violation bars with ±sd error bars, repair panels) into `figs/`. Edit the `RATE`/`SD` blocks to refresh with new numbers. |
 | `scaling_bench.py` | Verifier scaling benchmark: times `audit()` versus problem size (variables × constraints, real/int). **Pure z3, no API.** Writes `scaling_runs.csv`, `scaling_summary.txt`. |
+| `coverage_ablation.py` | Controlled coverage ablation: on the conflicting instances, drops each gold rule and audits soundness-only vs soundness+coverage, counting how many silent drops coverage flips from accept→flag. **Pure z3, no API.** |
+| `compare_coverage_loop.py` | Compares two `faithopt_loop.py` detail files (with-coverage vs `--no-coverage`) and reports the per-instance verdicts coverage changes — flagged/repaired with it, shipped silently without. |
 
 ### Data (`FaithConstraint-OR`, four splits — evaluate separately, do **not** merge)
 | File | n | What it tests |
@@ -95,6 +96,12 @@ python per_rule_analysis.py --runs 5 --temperature 0 --workers 8 \
     --splits multi identification multivariate single
 # verify-repair loop:
 python faithopt_loop.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_multivariate.jsonl --max-rounds 3 --workers 10
+# coverage ablation -- controlled, no API (the 1,373 / 1,115 / 395 / 158 result):
+python coverage_ablation.py
+# coverage ablation -- end-to-end (loop with vs without coverage, then compare):
+python faithopt_loop.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_identification.jsonl --max-rounds 3 --workers 10
+python faithopt_loop.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_identification.jsonl --max-rounds 3 --workers 10 --no-coverage
+python compare_coverage_loop.py runs/gpt-4o-2024-11-20__identification_faithopt_loop.txt runs/gpt-4o-2024-11-20__identification_nocov_faithopt_loop.txt
 # tables and figures:
 python analyze_results.py --runs runs
 python faithopt_figures.py

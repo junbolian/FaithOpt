@@ -32,7 +32,11 @@ ground truth.
   test invoked only when *M* is infeasible. A "faithful" verdict is never a false positive.
 - **Closes the empty-set loophole.** Under jointly infeasible rules, an infeasible model entails
   every rule vacuously, so entailment-only checking certifies a model even after a rule is
-  silently dropped. Coverage is a lightweight condition that closes this gap.
+  silently dropped. Coverage is a lightweight condition that closes this gap. Faithfulness in the
+  infeasible regime can also be characterized *exactly* through the irreducible infeasible
+  subsystems of *M* ∪ {¬*c*} (Gleeson–Ryan), decidable in polynomial time (one LP per rule); the
+  verifier uses the cheaper single-witness coverage by default, which raises no false alarm on the
+  benchmark.
 - **FaithConstraint-OR benchmark.** Four splits — `single`, `multi`, `identification`,
   `multivariate` — that decompose the sources of failure. Ground truth is mechanically generated
   and z3-verified, never produced by an LLM.
@@ -67,8 +71,9 @@ inverts depending on the constraint type. A broadly strong model *does* exist �
 safest of the six on two of the three failure-mode splits (`multi`, `identification`) and near-safest on the third — but it still mis-encodes a binding rule on
 ~5% of `identification` instances, which is not an acceptable operating point for a regulated
 pricing model, and a deployer cannot know in advance which model is safest for *its* mix of
-constraint types. Standard deviations are small relative to the gaps that define these effects, so they are robust to
-generation variance. The point is not that no model can be chosen well, but that no available model
+constraint types. The inversion is robust to generation variance: with 95% confidence intervals over the five
+generations, the two arms of each swing are disjoint (e.g. `claude-haiku` identification
+[48.0, 52.8]% vs multivariate [1.0, 3.2]%; `gpt-5.4` [18.7, 22.7]% vs [0.0, 0.6]%). The point is not that no model can be chosen well, but that no available model
 is reliable *enough* to make per-formulation verification unnecessary — so compliance cannot be
 secured by model selection alone.
 (Rates are produced by `run_multigen.py`; the `single` column reports its linear hard+very-hard
@@ -122,6 +127,14 @@ must re-derive the rule from the policy, and whether it succeeds varies by model
 unconditional; automatic repair is reliable for mis-encodings and only partial for unrecognized
 rules.
 
+**Coverage's end-to-end value (`faithopt_loop.py --no-coverage`).** Re-running the loop with a
+soundness-only verdict isolates what the coverage condition adds in the full pipeline. On
+`multivariate` the residual is essentially unchanged — those dropped rules are localizable, so
+repair recovers them either way — but on `identification` the gap is large: e.g. `gpt-4o`'s flagged
+rate falls from 16.0% to ~8–9%, because these are rules the model never recognized and repair
+cannot re-derive, so without coverage they pass as faithful and ship silently.
+`compare_coverage_loop.py` quantifies the per-instance difference.
+
 ### 3. The effect is not an artifact of the prompt
 
 Neutral-prompt ablation on `identification` (looser instructions → violation *rises*, ruling
@@ -135,13 +148,14 @@ out a prompt-induced effect):
 
 ### 4. Soundness alone is incomplete; coverage closes the gap
 
-`verify_theory.py` constructs, on the benchmark's conflicting instances, models with a silently
-dropped rule and checks them two ways. Jointly infeasible gold sets arise naturally as harder
-instances accumulate constraints — **225 conflicting instances across the `multi`,
-`identification`, and `multivariate` splits** (the 24 purpose-built over-determined instances are
-a curated subset). On constructed drops from these, **entailment-only checking is fooled into
-certifying a model with a dropped rule in 158 cases — all 158 of which the feasibility-gated audit
-catches.** This is the empirical backing for the completeness result.
+`verify_theory.py` and `coverage_ablation.py` construct, on the benchmark's conflicting instances,
+models with a silently dropped rule and check them two ways. Jointly infeasible gold sets arise
+naturally as harder instances accumulate constraints — **225 conflicting instances across the
+`multi`, `identification`, and `multivariate` splits** (the 24 purpose-built over-determined
+instances are a curated subset). Dropping each gold rule in turn yields **1,373 dropped-rule
+models; entailment-only checking certifies 1,115 of them as faithful, and the feasibility-gated
+audit flips 395 of those certifications across 158 distinct instances** from silent-accept to flag.
+This is the empirical backing for the completeness result.
 
 ## Quick start
 
@@ -212,6 +226,8 @@ verify_theory.py            empirical backing for the theory (Path A / Path B)
 analyze_results.py          single-run result tables (Wilson CIs) from runs/
 per_rule_analysis.py        per-rule vs per-instance breakdown
 scaling_bench.py            verifier scaling benchmark (pure z3 timing; no API)
+coverage_ablation.py        controlled coverage ablation (pure z3; no API)
+compare_coverage_loop.py    compares loop runs with vs without coverage
 generate_tier2.py           generator: multi split
 generate_tier3.py           generator: identification split
 generate_tier4_multivar.py  generator: multivariate split
