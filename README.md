@@ -36,7 +36,10 @@ ground truth.
   infeasible regime can also be characterized *exactly* through the irreducible infeasible
   subsystems of *M* ∪ {¬*c*} (Gleeson–Ryan), decidable in polynomial time (one LP per rule); the
   verifier uses the cheaper single-witness coverage by default, which raises no false alarm on the
-  benchmark.
+  benchmark. Two further results delimit the theory: this is the *compliance-critical* half of
+  two-sided **exact faithfulness** (*Feas(M) = Feas(G)*, i.e. also no over-constraining), and
+  reconciling a genuinely conflicting policy by relaxing the fewest rules is **NP-hard** (minimum
+  hitting set over IISs), so true conflicts are routed to a human rather than auto-relaxed.
 - **FaithConstraint-OR benchmark.** Four splits — `single`, `multi`, `identification`,
   `multivariate` — that decompose the sources of failure. Ground truth is mechanically generated
   and z3-verified, never produced by an LLM.
@@ -93,7 +96,7 @@ models, on the two splits that isolate the two failure types. (These are single 
 the *Bare* column is the one generation entering the loop and can differ from the five-generation
 means above by generation variance.)
 
-**Multivariate (mis-encoding failures) — repair drives violation to near zero:**
+**Multivariate (localizable mis-encodings) — fixed in one round where they occur; note the low bare rates (≤5.2%) and single-digit denominators:**
 
 | Model | Bare | FaithOpt | Repaired | Avg. rounds |
 |---|---|---|---|---|
@@ -117,9 +120,11 @@ means above by generation variance.)
 | gpt-4o| 19.3% | 16.0%    | 5/29  | 1.00 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
-**The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so multivariate
-failures are repaired almost completely (worst residual 1.1%), often in one round. For
-*identification* failures the outcome is model-dependent: some models recover well (gpt-5.4
+**The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so where
+multivariate mis-encodings occur they are fixed in one round (worst residual 1.1%); but the bare
+rates there are already low (≤5.2%) and the denominators single-digit, so this split confirms the
+*mechanism* rather than a rate. The quantitatively decisive contrast is on *identification*, where
+the headroom is large and the outcome is model-dependent: some models recover well (gpt-5.4
 21.3% → 4.0%, deepseek 5.3% → 2.7%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
 19.3% → 16.0%). The reason is the *kind* of feedback available — a counterexample flags that a
 rule is missing but cannot point at a line to fix (no line was ever written for it), so the model
@@ -131,8 +136,9 @@ rules.
 soundness-only verdict isolates what the coverage condition adds in the full pipeline. On
 `multivariate` the residual is essentially unchanged — those dropped rules are localizable, so
 repair recovers them either way — but on `identification` the gap is large: e.g. `gpt-4o`'s flagged
-rate falls from 16.0% to ~8–9%, because these are rules the model never recognized and repair
-cannot re-derive, so without coverage they pass as faithful and ship silently.
+rate falls from 16.0% to ~8–9%, because these are rules the model never recognized and repair cannot
+re-derive. Without coverage these (infeasible) models pass the audit as faithful, and the omission
+surfaces only as an unexplained "infeasible" at solve time rather than as a flagged, repairable drop.
 `compare_coverage_loop.py` quantifies the per-instance difference.
 
 ### 3. The effect is not an artifact of the prompt
@@ -155,7 +161,8 @@ naturally as harder instances accumulate constraints — **225 conflicting insta
 instances are a curated subset). Dropping each gold rule in turn yields **1,373 dropped-rule
 models; entailment-only checking certifies 1,115 of them as faithful, and the feasibility-gated
 audit flips 395 of those certifications across 158 distinct instances** from silent-accept to flag.
-This is the empirical backing for the completeness result.
+This is the empirical counterpart of why soundness alone is insufficient — entailment-only checking
+is incomplete under conflicts, and the feasibility-gated coverage condition closes the gap.
 
 ## Quick start
 
@@ -264,7 +271,8 @@ CODE_README.md              full code & reproducibility guide
   seeing it); recovery matched the gold on 119/120 instance-reconstructions, the lone miss a
   transcription slip — indicating the gold is recoverable from the text, not idiosyncratic.
 - **Scope.** Linear constraints, including multivariate cross-variable coupling. Non-linear and
-  logical/conditional constraints are out of scope.
+  logical/conditional constraints are out of scope, as is *objective* faithfulness (optimizing the
+  intended quantity) — we verify the constraint set, one factor of optimization-model faithfulness.
 
 ## Citation
 
