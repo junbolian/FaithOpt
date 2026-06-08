@@ -60,7 +60,7 @@ safest model in each column is **bold**, the worst is _italic_.
 | claude-opus-4-7        | **9.2 ± 1.9** | 6.0 ± 1.1 | 24.7 ± 1.6 | 0.8 ± 0.3 |
 | gpt-5.4                | 11.7 ± 1.9 | 4.3 ± 0.4 | 20.7 ± 1.6 | **0.2 ± 0.3** |
 | qwen3-max              | 20.0 ± 3.5 | **1.5 ± 0.3** | **5.1 ± 1.3** | 0.5 ± 0.3 |
-| deepseek-v3.2          | _21.7 ± 5.4_ | 12.8 ± 1.5 | 12.4 ± 1.9 | 5.9 ± 0.8 |
+| deepseek-v3.2          | _21.7 ± 3.5_ | 10.1 ± 1.2 | 6.5 ± 1.5 | 0.9 ± 0.7 |
 | gpt-4o-2024-11-20      | 20.0 ± 6.2 | 31.3 ± 1.8 | 19.3 ± 1.4 | _6.1 ± 0.9_ |
 | claude-haiku-4-5       | 16.7 ± 3.0 | _34.9 ± 0.9_ | _50.4 ± 1.9_ | 2.1 ± 0.9 |
 
@@ -100,7 +100,7 @@ means above by generation variance.)
 | claude-opus-4-7  | 0.0%  | **0.0%** | —     | —    |
 | gpt-5.4          | 1.7% | **0.0%** | 3/3 | 1.00 |
 | qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
-| deepseek-v3.2    | 5.7%  | **0.0%** | 10/10 | 1.00 |
+| deepseek-v3.2    | 1.1%  | **0.0%** | 2/2 | 1.00 |
 | gpt-4o| 5.2%  | 1.1%     | 7/9   | 1.71 |
 | claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
 
@@ -113,14 +113,14 @@ means above by generation variance.)
 | claude-opus-4-7  | 24.7% | 9.3%     | 23/37 | 1.43 |
 | gpt-5.4          | 21.3% | 4.0% | 26/32 | 1.12 |
 | qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
-| deepseek-v3.2    | 12.0% | **3.3%**     | 13/18 | 1.38 |
+| deepseek-v3.2    | 5.3% | **2.7%**     | 4/8 | 1.50 |
 | gpt-4o| 19.3% | 16.0%    | 5/29  | 1.00 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
 **The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so multivariate
 failures are repaired almost completely (worst residual 1.1%), often in one round. For
 *identification* failures the outcome is model-dependent: some models recover well (gpt-5.4
-21.3% → 4.0%, deepseek 12.0% → 3.3%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
+21.3% → 4.0%, deepseek 5.3% → 2.7%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
 19.3% → 16.0%). The reason is the *kind* of feedback available — a counterexample flags that a
 rule is missing but cannot point at a line to fix (no line was ever written for it), so the model
 must re-derive the rule from the policy, and whether it succeeds varies by model. Detection is
@@ -143,7 +143,7 @@ out a prompt-induced effect):
 | Model | Full prompt | Neutral prompt |
 |---|---|---|
 | gpt-5.4          | 21.3% | 54.0% |
-| deepseek-v3.2    | 12.7% | 73.3% |
+| deepseek-v3.2    | 10.0% | 80.0% |
 | claude-haiku-4-5 | 52.7% | 78.7% |
 
 ### 4. Soundness alone is incomplete; coverage closes the gap
@@ -225,17 +225,21 @@ faithopt_loop.py            verify-repair loop
 verify_theory.py            empirical backing for the theory (Path A / Path B)
 analyze_results.py          single-run result tables (Wilson CIs) from runs/
 per_rule_analysis.py        per-rule vs per-instance breakdown
+run_perrule.py              per-rule harness used for the paper's per-rule table
 scaling_bench.py            verifier scaling benchmark (pure z3 timing; no API)
 coverage_ablation.py        controlled coverage ablation (pure z3; no API)
 compare_coverage_loop.py    compares loop runs with vs without coverage
+exact_coverage_ablation.py  relaxation vs exact (IIS) coverage, controlled (pure z3)
+exact_vs_relax_realdata.py  relaxation vs exact coverage on real LLM outputs
+llm_judge_baseline.py       LLM-as-judge baseline (judge vs the formal verifier)
 generate_tier2.py           generator: multi split
 generate_tier3.py           generator: identification split
 generate_tier4_multivar.py  generator: multivariate split
 gen_overdetermined.py       appends over-determined conflicts to multivariate
-make_data_card.py           (re)generates DATA_CARD.md
+generate_highdim.py         generator: high-dimensional stress split (k=5,8,10)
 reproduce.sh                one-command reproduction
 requirements.txt            dependencies
-FaithConstraint-OR_*.jsonl  the four benchmark splits (44 / 150 / 150 / 174)
+FaithConstraint-OR_*.jsonl  benchmark splits: single/multi/identification/multivariate (44/150/150/174) + highdim (60)
 DATA_CARD.md                benchmark metadata
 CODE_README.md              full code & reproducibility guide
 ```

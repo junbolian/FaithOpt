@@ -9,7 +9,7 @@ with a `_manifest` line carrying the split's identity; data readers skip it.
 
 | Split (file) | n | #vars | conflicts | cross-var | what it tests |
 |---|---|---|---|---|---|
-| `FaithConstraint-OR_single.jsonl` | 44 | [0, 1, 2, 3, 5, 6] | 1 | 8 | single pre-extracted constraint (baseline) |
+| `FaithConstraint-OR_single.jsonl` | 44 | [0, 1, 2, 3, 5, 6] | 1 | 8 | baseline; pre-extracted, mostly single-variable, one to three gold/instance (mean about 1.8) |
 | `FaithConstraint-OR_multi.jsonl` | 150 | [1] | 82 | 0 | multiple pre-extracted constraints; encode all |
 | `FaithConstraint-OR_identification.jsonl` | 150 | [1] | 80 | 0 | identify constraints among numbered noise, then encode |
 | `FaithConstraint-OR_multivariate.jsonl` | 174 | [2] | 63 | 174 | two prices p1,p2 with cross-variable constraints + conflicts |
@@ -23,7 +23,7 @@ with a `_manifest` line carrying the split's identity; data readers skip it.
   "dataset": "FaithConstraint-OR",
   "split": "single-constraint",
   "version": "v0",
-  "description": "Single pre-extracted hard constraint per instance (sanity baseline). Mostly one variable; includes 3 intentional out-of-scope marker instances (missing-value / temporal / discrete-ladder) with empty gold.",
+  "description": "Baseline (sanity): constraints pre-extracted and stated plainly. Mostly single-variable; instances carry one to three gold constraints (mean about 1.8). Includes 3 intentional out-of-scope marker instances (missing-value / temporal / discrete-ladder) with empty gold.",
   "n_instances": 44,
   "num_variables": [
     0,
