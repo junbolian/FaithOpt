@@ -8,11 +8,6 @@
 # API: experiments use an OpenAI-compatible endpoint. Set:
 #   export GLOBALAI_KEY=sk-...          # your key
 # (call_real_llm in formulator.py reads base_url + this key from the env.)
-#
-# All steps are idempotent. Logs land in ./runs ; the main table is printed by
-# run_multigen.py, the per-rule table by run_perrule.py, the repair / neutral /
-# status tables by analyze_results.py, and the coverage / scaling results by the
-# pure-z3 scripts in steps 1c-1e (plus 5b, 6).
 # ======================================================================
 set -euo pipefail
 
