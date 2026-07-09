@@ -1,0 +1,6 @@
+FaithOpt multi-generation summary  (runs=5, temperature=0.0)
+mean +/- sd of per-instance violation rate over independent generations, Hard+Very-hard
+
+model                                  multi      identification        multivariate              single
+--------------------------------------------------------------------------------------------------------
+deepseek-v3.2                   10.1 +/- 1.2         6.5 +/- 1.5         0.9 +/- 0.7        21.7 +/- 3.5

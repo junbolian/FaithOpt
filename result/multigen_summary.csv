@@ -1,0 +1,5 @@
+model,split,runs,mean_pct,sd_pct,min_pct,max_pct,temperature
+deepseek-v3.2,multi,5,10.13,1.19,8.67,11.33,0.0
+deepseek-v3.2,identification,5,6.53,1.52,4.0,8.0,0.0
+deepseek-v3.2,multivariate,5,0.92,0.66,0.0,1.72,0.0
+deepseek-v3.2,single,5,21.67,3.49,16.67,25.0,0.0

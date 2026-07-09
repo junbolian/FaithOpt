@@ -1,0 +1,62 @@
+model,split,family,rules_checked_total,rules_violated_total,per_rule_rate_pct
+deepseek-v3.2,multi,"T2-multi (2 clauses, conflict/empty-set)",30,8,26.67
+deepseek-v3.2,multi,"T2-multi (2 clauses, multi)",90,0,0.0
+deepseek-v3.2,multi,"T2-multi (2 clauses, tightest-binding)",130,6,4.62
+deepseek-v3.2,multi,"T2-multi (3 clauses, conflict/empty-set)",105,8,7.62
+deepseek-v3.2,multi,"T2-multi (3 clauses, tightest-binding)",270,7,2.59
+deepseek-v3.2,multi,"T2-multi (5 clauses, conflict/empty-set)",300,4,1.33
+deepseek-v3.2,multi,"T2-multi (5 clauses, tightest-binding)",325,1,0.31
+deepseek-v3.2,multi,"T2-multi (6 clauses, conflict/empty-set)",540,10,1.85
+deepseek-v3.2,multi,"T2-multi (6 clauses, tightest-binding)",210,0,0.0
+deepseek-v3.2,multi,"T2-multi (7 clauses, conflict/empty-set)",700,20,2.86
+deepseek-v3.2,multi,"T2-multi (7 clauses, tightest-binding)",175,3,1.71
+deepseek-v3.2,multi,"T2-multi (8 clauses, conflict/empty-set)",880,6,0.68
+deepseek-v3.2,multi,"T2-multi (8 clauses, tightest-binding)",120,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (2 of 6 items are constraints, conflict/empty-set)",10,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (2 of 6 items are constraints, multi)",110,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (2 of 6 items are constraints, tightest-binding)",130,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (3 of 8 items are constraints, conflict/empty-set)",60,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (3 of 8 items are constraints, tightest-binding)",315,10,3.17
+deepseek-v3.2,identification,"T3-fulllist (5 of 12 items are constraints, conflict/empty-set)",250,5,2.0
+deepseek-v3.2,identification,"T3-fulllist (5 of 12 items are constraints, tightest-binding)",375,4,1.07
+deepseek-v3.2,identification,"T3-fulllist (6 of 14 items are constraints, conflict/empty-set)",600,2,0.33
+deepseek-v3.2,identification,"T3-fulllist (6 of 14 items are constraints, tightest-binding)",150,2,1.33
+deepseek-v3.2,identification,"T3-fulllist (7 of 16 items are constraints, conflict/empty-set)",735,14,1.9
+deepseek-v3.2,identification,"T3-fulllist (7 of 16 items are constraints, tightest-binding)",140,0,0.0
+deepseek-v3.2,identification,"T3-fulllist (8 of 18 items are constraints, conflict/empty-set)",960,19,1.98
+deepseek-v3.2,identification,"T3-fulllist (8 of 18 items are constraints, tightest-binding)",40,2,5.0
+deepseek-v3.2,multivariate,"T4-multivar (3 constraints incl. cross-variable, conflict/empty-set)",30,1,3.33
+deepseek-v3.2,multivariate,"T4-multivar (3 constraints incl. cross-variable, multivar-coupled)",420,2,0.48
+deepseek-v3.2,multivariate,"T4-multivar (4 constraints, over-determined conflict/empty-set)",480,0,0.0
+deepseek-v3.2,multivariate,"T4-multivar (5 constraints incl. cross-variable, conflict/empty-set)",175,0,0.0
+deepseek-v3.2,multivariate,"T4-multivar (5 constraints incl. cross-variable, multivar-coupled)",575,2,0.35
+deepseek-v3.2,multivariate,"T4-multivar (6 constraints incl. cross-variable, conflict/empty-set)",270,2,0.74
+deepseek-v3.2,multivariate,"T4-multivar (6 constraints incl. cross-variable, multivar-coupled)",630,2,0.32
+deepseek-v3.2,multivariate,"T4-multivar (7 constraints incl. cross-variable, conflict/empty-set)",340,1,0.29
+deepseek-v3.2,multivariate,"T4-multivar (7 constraints incl. cross-variable, multivar-coupled)",690,5,0.72
+deepseek-v3.2,multivariate,"T4-multivar (8 constraints incl. cross-variable, conflict/empty-set)",400,7,1.75
+deepseek-v3.2,multivariate,"T4-multivar (8 constraints incl. cross-variable, multivar-coupled)",680,5,0.74
+deepseek-v3.2,single,Aggregate budget (across loss-leaders),5,4,80.0
+deepseek-v3.2,single,Aggregate cardinality (binary change budget),5,0,0.0
+deepseek-v3.2,single,Aggregate/ratio constraint (linearization error),5,3,60.0
+deepseek-v3.2,single,Cardinality x budget interaction,15,0,0.0
+deepseek-v3.2,single,Conditional (exclusive only) + one-sided,10,0,0.0
+deepseek-v3.2,single,Conditional exemption (cost floor),5,0,0.0
+deepseek-v3.2,single,Constraint interaction -> empty set (conflict detection),15,0,0.0
+deepseek-v3.2,single,Dense 4-rule (tightest ignored),15,0,0.0
+deepseek-v3.2,single,Dense multi-constraint + cross-ref + take-lower + hidden floor,15,0,0.0
+deepseek-v3.2,single,Derived target + proportional tolerance,10,0,0.0
+deepseek-v3.2,single,"Double reference, take min (miss/wrong-op)",10,0,0.0
+deepseek-v3.2,single,Double-reference coupling (floor+ceiling),10,0,0.0
+deepseek-v3.2,single,Exemption + halo-adjusted cost (below-cost allowed),10,0,0.0
+deepseek-v3.2,single,Fuzzy modifier + exception (scope reversal),5,1,20.0
+deepseek-v3.2,single,Multi-branch condition (wrong branch),10,0,0.0
+deepseek-v3.2,single,Negation/scope (easily inverted),10,0,0.0
+deepseek-v3.2,single,Noise axis (constraint buried in distractors),5,0,0.0
+deepseek-v3.2,single,Piecewise/tiered (single-rate error),5,5,100.0
+deepseek-v3.2,single,"Quantity-price coupling (weighted, easily dropped)",5,2,40.0
+deepseek-v3.2,single,Robust / interval uncertainty,10,10,100.0
+deepseek-v3.2,single,Stratified cardinality (condition x band x drug-type),10,0,0.0
+deepseek-v3.2,single,Temporal + proportional movement cap,10,0,0.0
+deepseek-v3.2,single,Two-sided band + competitor anchor,10,4,40.0
+deepseek-v3.2,single,Unit/granularity mismatch,5,2,40.0

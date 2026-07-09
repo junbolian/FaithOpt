@@ -1,0 +1,9 @@
+FaithOpt per-rule vs instance-level violation  (runs=5, temperature=0.0, Hard+Very-hard)
+mean +/- sd over independent generations. instance = any rule fails; per-rule = fraction of gold rules unfaithful.
+
+model                      split                instance %       per-rule %   mean k
+-------------------------------------------------------------------------------------
+deepseek-v3.2              multi             9.6 +/- 1.5      1.9 +/- 0.3        5.2
+deepseek-v3.2              identification    7.6 +/- 1.0      1.5 +/- 0.2        5.2
+deepseek-v3.2              multivariate      3.1 +/- 1.7      0.6 +/- 0.3        5.4
+deepseek-v3.2              single           20.0 +/- 8.0     14.4 +/- 5.5        1.8
