@@ -35,7 +35,7 @@ ground truth.
   silently dropped. Coverage is a lightweight condition that closes this gap. Faithfulness in the
   infeasible regime can also be characterized *exactly* through the irreducible infeasible
   subsystems of *M* ∪ {¬*c*} (Gleeson–Ryan), decidable in polynomial time (one LP per rule); the
-  verifier uses the cheaper single-witness coverage by default, which raises no false alarm on the
+  verifier uses the cheaper single-witness coverage by default (`audit(..., coverage="exact")` switches to the exact Theorem-2 criterion, the recommended default for compliance audits in the infeasible regime), which raises no false alarm on the
   benchmark. Two further results delimit the theory: this is the *compliance-critical* half of
   two-sided **exact faithfulness** (*Feas(M) = Feas(G)*, i.e. also no over-constraining), and
   reconciling a genuinely conflicting policy by relaxing the fewest rules is **NP-hard** (minimum
@@ -57,6 +57,8 @@ over six models spanning current frontier and lighter-weight systems. They are r
 Bare-LLM violation rate (%) on the hard + very-hard instances of each split, reported as
 **mean ± sd over five independent generations** per instance (temperature 0). Lower is better; the
 safest model in each column is **bold**, the worst is _italic_.
+
+> **Model pinning & accounting.** `gpt-5.4` throughout denotes the pinned snapshot `gpt-5.4-2026-03-05`. Rates count unauditable output (unparseable / symbolic bounds) as failing, the same fail-closed reading the verifier applies to `unknown`; the paper's e-companion gives the per-model status decomposition.
 
 | Model | single (n=24) | multi (n=150) | identification (n=150) | multivariate (n=174) |
 |---|---|---|---|---|
@@ -104,7 +106,7 @@ means above by generation variance.)
 | gpt-5.4          | 1.7% | **0.0%** | 3/3 | 1.00 |
 | qwen3-max        | 0.6%  | **0.0%** | 1/1   | 1.00 |
 | deepseek-v3.2    | 1.1%  | **0.0%** | 2/2 | 1.00 |
-| gpt-4o| 5.2%  | 1.1%     | 7/9   | 1.71 |
+| gpt-4o| 5.2%  | 1.7%     | 6/9   | 1.50 |
 | claude-haiku-4-5 | 1.7%  | 0.6%     | 2/3   | 1.00 |
 
 
@@ -117,16 +119,16 @@ means above by generation variance.)
 | gpt-5.4          | 21.3% | 4.0% | 26/32 | 1.12 |
 | qwen3-max        | 6.0%  | 4.7%     | 2/9   | 1.00 |
 | deepseek-v3.2    | 5.3% | **2.7%**     | 4/8 | 1.50 |
-| gpt-4o| 19.3% | 16.0%    | 5/29  | 1.00 |
+| gpt-4o| 25.3% | 21.3%    | 6/38  | 1.17 |
 | claude-haiku-4-5 | 51.3% | 32.7%    | 28/77 | 1.39 |
 
 **The contrast is the point.** A counterexample points at a *mis-encoded* coupling, so where
-multivariate mis-encodings occur they are fixed in one round (worst residual 1.1%); but the bare
+multivariate mis-encodings occur they are fixed in one round (worst residual 1.7%); but the bare
 rates there are already low (≤5.2%) and the denominators single-digit, so this split confirms the
 *mechanism* rather than a rate. The quantitatively decisive contrast is on *identification*, where
 the headroom is large and the outcome is model-dependent: some models recover well (gpt-5.4
 21.3% → 4.0%, deepseek 5.3% → 2.7%), while others leave large residuals (claude-haiku 51.3% → 32.7%, gpt-4o
-19.3% → 16.0%). The reason is the *kind* of feedback available — a counterexample flags that a
+25.3% → 21.3%). The reason is the *kind* of feedback available — a counterexample flags that a
 rule is missing but cannot point at a line to fix (no line was ever written for it), so the model
 must re-derive the rule from the policy, and whether it succeeds varies by model. Detection is
 unconditional; automatic repair is reliable for mis-encodings and only partial for unrecognized
@@ -163,6 +165,16 @@ models; entailment-only checking certifies 1,115 of them as faithful, and the fe
 audit flips 395 of those certifications across 158 distinct instances** from silent-accept to flag.
 This is the empirical counterpart of why soundness alone is insufficient — entailment-only checking
 is incomplete under conflicts, and the feasibility-gated coverage condition closes the gap.
+
+### 5. The other direction: over-constraining is rare — and uncorrelated with violation
+
+Auditing every parse-clean output in the symmetric direction (does a model constraint exclude a
+point the policy permits?) with the same entailment procedure, roles of *M* and *G* exchanged:
+over-constraining hits only 0.15–0.47% of emitted constraints on the generated splits (5.5% on the
+small hand-authored split), an order of magnitude below violation, and the two directions are
+uncorrelated across models — the worst violators are not the over-constrainers, and only 17 of
+2,922 audited instances err in both directions. Compliance risk and conservatism risk need
+separate monitoring; per-model counts are in the paper's Section 5.6 and e-companion.
 
 ## Quick start
 
@@ -219,6 +231,15 @@ python formulator.py --model gpt-4o-2024-11-20 --data FaithConstraint-OR_multiva
 python analyze_results.py --runs runs      # recompute the tables above (with 95% CIs)
 ```
 
+**Offline regeneration (no API).** Every `runs/<model>__<split>_detail.txt` is a pure re-audit of
+the saved raw dumps in `runs/<model>__<split>/`: `python regen_detail.py --model <m> --data
+FaithConstraint-OR_<split>.jsonl` regenerates it bit-identically with zero network access, so any
+verdict in the paper can be re-derived and checked offline.
+
+**Pinned snapshots.** Reported models are pinned; artifacts from a later unpinned `gpt-5.4` alias
+(which fails to parse entirely) are kept under a `deprecated_` prefix in `runs/` as a cautionary
+example of why pinning matters.
+
 See **[CODE_README.md](CODE_README.md)** for the full file-by-file guide, dataset schema, and
 how to run individual steps, and **[DATA_CARD.md](DATA_CARD.md)** for benchmark metadata.
 
@@ -238,6 +259,7 @@ coverage_ablation.py        controlled coverage ablation (pure z3; no API)
 compare_coverage_loop.py    compares loop runs with vs without coverage
 exact_coverage_ablation.py  relaxation vs exact (IIS) coverage, controlled (pure z3)
 exact_vs_relax_realdata.py  relaxation vs exact coverage on real LLM outputs
+regen_detail.py             offline regeneration of detail logs from saved raw dumps (no API)
 llm_judge_baseline.py       LLM-as-judge baseline (judge vs the formal verifier)
 generate_tier2.py           generator: multi split
 generate_tier3.py           generator: identification split
@@ -247,6 +269,7 @@ generate_highdim.py         generator: high-dimensional stress split (k=5,8,10)
 reproduce.sh                one-command reproduction
 requirements.txt            dependencies
 FaithConstraint-OR_*.jsonl  benchmark splits: single/multi/identification/multivariate (44/150/150/174) + highdim (60)
+PROMPTS.md                  the three prompt templates, verbatim (the exact strings the harness reads)
 DATA_CARD.md                benchmark metadata
 CODE_README.md              full code & reproducibility guide
 ```
